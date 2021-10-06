@@ -111,8 +111,10 @@ class Trainer:
         print("Training is using:\n  ", self.device)
 
         # data
+        # AGGIUNTA DI OXFORD ROBOTCAR DATASET
         datasets_dict = {"kitti": datasets.KITTIRAWDataset,
-                         "kitti_odom": datasets.KITTIOdomDataset}
+                         "kitti_odom": datasets.KITTIOdomDataset,
+                         "oxford": datasets.OXFORDRAWDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
         fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
