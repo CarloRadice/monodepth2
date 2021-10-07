@@ -112,11 +112,18 @@ def test_simple(args):
         # output_directory = os.path.dirname(args.image_path)
         output_directory = '/home/radice/neuralNetworks/m2Result'
         # KITTI path finder
-        splitted = paths[0].split('/')
-        folder = [s for s in splitted if "_sync" in s]
+        if args.dataset == 'KITTI':
+            splitted = paths[0].split('/')
+            folder = [s for s in splitted if "_sync" in s]
+
+        if args.dataset == 'OXFORD':
+            splitted = paths[0].split('/')
+            # da cambiare poi quando verrà scaricato il dataset reale
+            folder = [s for s in splitted if "_radar" in s]
+
         path = os.path.normpath(args.image_path)
         path = path.split(os.sep)
-        # print(path[6])
+
     elif os.path.isdir(args.image_path):
         # Searching folder for images
         paths = glob.glob(os.path.join(args.image_path, '*.{}'.format(args.ext)))
@@ -124,7 +131,6 @@ def test_simple(args):
         output_directory = '/home/radice/neuralNetworks/m2Result'
         path = os.path.normpath(args.image_path)
         path = path.split(os.sep)
-        # print(path[6])
 
     else:
         raise Exception("Can not find args.image_path: {}".format(args.image_path))
@@ -158,8 +164,7 @@ def test_simple(args):
             output_name = os.path.splitext(os.path.basename(image_path))[0]
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
             if args.pred_metric_depth:
-                #name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format(folder[0] + '_' + output_name))
-                name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format('_' + output_name))
+                name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format(folder[0] + '_' + output_name))
                 if args.dataset == 'KITTI':
                     metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
                 if args.dataset == 'OXFORD':
@@ -169,8 +174,7 @@ def test_simple(args):
                     metric_depth = stereo_scale_factor * depth.cpu().numpy()
                 np.save(name_dest_npy, metric_depth)
             else:
-                #name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(folder[0] +'_' + output_name))
-                name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format('_' + output_name))
+                name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(folder[0] +'_' + output_name))
                 np.save(name_dest_npy, scaled_disp.cpu().numpy())
 
             # Saving colormapped depth image
@@ -181,8 +185,7 @@ def test_simple(args):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-            #name_dest_im = os.path.join(output_directory, "{}_disp.jpeg".format(folder[0] + '_' + output_name))
-            name_dest_im = os.path.join(output_directory, "{}_disp.jpeg".format('_' + output_name))
+            name_dest_im = os.path.join(output_directory, "{}_disp.jpeg".format(folder[0] + '_' + output_name))
             im.save(name_dest_im)
 
             print("   Processed {:d} of {:d} images - saved predictions to:".format(
