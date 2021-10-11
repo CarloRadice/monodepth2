@@ -217,10 +217,10 @@ class Trainer:
             late_phase = self.step % 2000 == 0
 
             # stampa sempre log_time
-            self.log_time(batch_idx, duration, losses["loss"].cpu().data)
+            #self.log_time(batch_idx, duration, losses["loss"].cpu().data)
 
             if early_phase or late_phase:
-                #self.log_time(batch_idx, duration, losses["loss"].cpu().data)
+                self.log_time(batch_idx, duration, losses["loss"].cpu().data)
 
                 if "depth_gt" in inputs:
                     self.compute_depth_losses(inputs, outputs, losses)
