@@ -252,8 +252,8 @@ class Trainer:
                 depth_output_image = depth_output_image_list[index].cpu().detach().numpy()
                 depth_output_image = depth_output_image[0]
                 depth_output_image = depth_output_image[0]
-                single_image = wandb.Image(depth_output_image)
-                wandb.log({"examples": single_image})
+                #single_image = wandb.Image(depth_output_image)
+                #wandb.log({"examples": single_image})
                 #cv2.imwrite('/home/radice/1.jpeg', depth_output_image)
 
 
@@ -287,6 +287,9 @@ class Trainer:
 
         epoch_loss = epoch_loss / count
         # wandb log
+        # save 1 depth image for each epoch
+        # single_image = wandb.Image(depth_output_image)
+        # wandb.log({"examples": single_image})
         wandb.log({'epoch_loss': epoch_loss})
 
 
