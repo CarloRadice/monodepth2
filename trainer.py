@@ -28,16 +28,20 @@ from IPython import embed
 # wandb
 import wandb
 from datetime import date
-import cv2
+import PIL.Image as pil
+import matplotlib as mpl
+import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-2014-06-26-09-31-18-nocrop'
+wandb_name = str(today) + '-mono-oxford-2014-06-26-09-31-18-nocrop'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
-# frame_id che controllo ad ogni iterazione
-wandb_frame_id = 214
-depth_output_image_array = []
+# frame_id che controllo ad ogni iterazione (ORA PER OXFORD 2014-06-26-09-31-18)
+wandb_frame_id = 1985
+original_height = 960
+original_width =1280
+
 
 class Trainer:
     def __init__(self, options):
@@ -230,10 +234,10 @@ class Trainer:
         print("Training")
         self.set_train()
 
-        print('OK?')
         epoch_loss = 0
         count = 0
 
+        wandb_disp = 0
 
         for batch_idx, inputs in enumerate(self.train_loader):
 
@@ -242,22 +246,14 @@ class Trainer:
             outputs, losses = self.process_batch(inputs)
 
             # ritorna tutte le immagini per questo input
-            # color_image_list = inputs.get(('color', 0, 0))
-            # ritorna tutti i frame_id per questo input
+            color_image_list = inputs.get(('color', 0, 0))
+            #ritorna tutti i frame_id per questo input
             frame_id_list = inputs.get('frame_id')
             frame_id_list = frame_id_list.cpu().numpy()
             if wandb_frame_id in frame_id_list:
                 index = np.where(frame_id_list==wandb_frame_id)
-                depth_output_image_list = outputs.get(('depth', 0, 0))
-                depth_output_image = depth_output_image_list[index].cpu().detach().numpy()
-                depth_output_image = depth_output_image[0]
-                depth_output_image = depth_output_image[0]
-                #single_image = wandb.Image(depth_output_image)
-                #wandb.log({"examples": single_image})
-                #cv2.imwrite('/home/radice/1.jpeg', depth_output_image)
-
-
-
+                wandb_disp_list = outputs[("disp", 0)]
+                wandb_disp = wandb_disp_list[index]
 
             self.model_optimizer.zero_grad()
             losses["loss"].backward()
@@ -279,18 +275,29 @@ class Trainer:
                 self.val()
 
             # wandb log
-            wandb.log({'batch_loss': losses["loss"].cpu().data})
+            #wandb.log({'batch_loss': losses["loss"].cpu().data})
             epoch_loss+= losses["loss"].cpu().data
 
             self.step += 1
             count += 1
 
         epoch_loss = epoch_loss / count
+
         # wandb log
         # save 1 depth image for each epoch
-        # single_image = wandb.Image(depth_output_image)
-        # wandb.log({"examples": single_image})
-        wandb.log({'epoch_loss': epoch_loss})
+        # Saving colormapped depth image
+        if torch.is_tensor(wandb_disp):
+            wandb_disp_resized = torch.nn.functional.interpolate(wandb_disp, (original_height, original_width),
+                                                                 mode="bilinear", align_corners=False)
+            wandb_disp_resized_np = wandb_disp_resized.detach().squeeze().cpu().numpy()
+            vmax = np.percentile(wandb_disp_resized_np, 95)
+            normalizer = mpl.colors.Normalize(vmin=wandb_disp_resized_np.min(), vmax=vmax)
+            mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
+            colormapped_im = (mapper.to_rgba(wandb_disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
+            im = pil.fromarray(colormapped_im)
+            single_image = wandb.Image(im)
+            wandb.log({"examples": single_image}, step = self.epoch)
+        wandb.log({'epoch_loss': epoch_loss}, step = self.epoch)
 
 
     def process_batch(self, inputs):

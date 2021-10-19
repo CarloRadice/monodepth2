@@ -111,20 +111,21 @@ def test_simple(args):
     if os.path.isfile(args.image_path):
         # Only testing on a single image
         paths = [args.image_path]
-        # output_directory = os.path.dirname(args.image_path)
-        output_directory = '/home/radice/neuralNetworks/m2Result'
         # KITTI path finder
         if args.dataset == 'KITTI':
             print('-> USING KITTI TEST IMAGE')
             splitted = paths[0].split('/')
             folder = [s for s in splitted if "_sync" in s]
+            # output_directory = os.path.dirname(args.image_path)
+            output_directory = '/home/radice/neuralNetworks/results/monodepth2/KITTI/'
 
         if args.dataset == 'OXFORD':
             print('-> USING OXFORD TEST IMAGE')
             splitted = paths[0].split('/')
             # da cambiare poi quando verrà scaricato il dataset reale
-            folders_names = ['2014', '2015']
-            folder = [s for s in splitted if folders_names in s]
+            folder = [s for s in splitted if ('2014' or '2015') in s]
+            # output_directory = os.path.dirname(args.image_path)
+            output_directory = '/home/radice/neuralNetworks/results/monodepth2/OXFORD/'
 
         path = os.path.normpath(args.image_path)
         path = path.split(os.sep)
@@ -175,7 +176,7 @@ def test_simple(args):
                     metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
                 if args.dataset == 'OXFORD':
                     # oxford baseline between left and right cameras
-                    oxford_baseline = 24
+                    oxford_baseline = 0.24
                     stereo_scale_factor = oxford_baseline / 0.1
                     metric_depth = stereo_scale_factor * depth.cpu().numpy()
                     print('-> OXFORD STEREO_SCALE_FACTOR', stereo_scale_factor)
