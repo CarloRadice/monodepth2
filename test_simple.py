@@ -42,7 +42,9 @@ def parse_args():
                             "mono_1024x320",
                             "stereo_1024x320",
                             "mono+stereo_1024x320",
-                            "oxford_stereo_640x192"])
+                            "oxford_stereo_640x192",
+                            "oxford_mono_640x192",
+                            "oxford"])
     parser.add_argument('--ext', type=str,
                         help='image extension to search for in folder', default="jpg")
     parser.add_argument("--no_cuda",
@@ -113,13 +115,16 @@ def test_simple(args):
         output_directory = '/home/radice/neuralNetworks/m2Result'
         # KITTI path finder
         if args.dataset == 'KITTI':
+            print('-> USING KITTI TEST IMAGE')
             splitted = paths[0].split('/')
             folder = [s for s in splitted if "_sync" in s]
 
         if args.dataset == 'OXFORD':
+            print('-> USING OXFORD TEST IMAGE')
             splitted = paths[0].split('/')
             # da cambiare poi quando verrà scaricato il dataset reale
-            folder = [s for s in splitted if "_radar" in s]
+            folders_names = ['2014', '2015']
+            folder = [s for s in splitted if folders_names in s]
 
         path = os.path.normpath(args.image_path)
         path = path.split(os.sep)
@@ -166,12 +171,14 @@ def test_simple(args):
             if args.pred_metric_depth:
                 name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format(folder[0] + '_' + output_name))
                 if args.dataset == 'KITTI':
+                    print('-> KITTI STEREO_SCALE_FACTOR', STEREO_SCALE_FACTOR)
                     metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
                 if args.dataset == 'OXFORD':
                     # oxford baseline between left and right cameras
                     oxford_baseline = 24
                     stereo_scale_factor = oxford_baseline / 0.1
                     metric_depth = stereo_scale_factor * depth.cpu().numpy()
+                    print('-> OXFORD STEREO_SCALE_FACTOR', stereo_scale_factor)
                 np.save(name_dest_npy, metric_depth)
             else:
                 name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(folder[0] +'_' + output_name))

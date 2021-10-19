@@ -172,6 +172,10 @@ class MonoDataset(data.Dataset):
             inputs[("K", scale)] = torch.from_numpy(K)
             inputs[("inv_K", scale)] = torch.from_numpy(inv_K)
 
+        # aggiunta del frame_id
+        # cosi so quali frame_id sono presi ad ogni passo nel ciclo in run_epoch
+        inputs['frame_id'] = frame_index
+
         if do_color_aug:
             color_aug = transforms.ColorJitter.get_params(
                 self.brightness, self.contrast, self.saturation, self.hue)
