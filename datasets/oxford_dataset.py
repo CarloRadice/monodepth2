@@ -22,12 +22,21 @@ class OXFORDDataset(MonoDataset):
         # Cosa ho fatto:
         # prima riga: 983.044006 / 1280, 0, 643.646973/ 1280, 0
         # seconda riga: 0, 983.044006 / 960, 493.378998 / 960, 0
+        # self.K = np.array([[0.77, 0, 0.5, 0],
+        #                    [0, 1.02, 0.5, 0],
+        #                    [0, 0, 1, 0],
+        #                    [0, 0, 0, 1]], dtype=np.float32)
+
+        # NO IMAGE CROP
+        # self.full_res_shape = (1280, 960)
+        # IMAGE CROP
+        self.full_res_shape = (1280, 800)
+        # seconda riga: 0, 983.044006 / 800, 493.378998 / 800, 0
         self.K = np.array([[0.77, 0, 0.5, 0],
-                           [0, 1.02, 0.5, 0],
+                           [0, 1.23, 0.62, 0],
                            [0, 0, 1, 0],
                            [0, 0, 0, 1]], dtype=np.float32)
 
-        self.full_res_shape = (1280, 960)
         self.side_map = {"l": "left", "r": "right"}
 
     def check_depth(self):
@@ -43,8 +52,8 @@ class OXFORDDataset(MonoDataset):
         """
         color = self.loader(self.get_image_path(folder, frame_index, side))
 
-        if do_flip:
-            color = color.transpose(pil.FLIP_LEFT_RIGHT)
+        # if do_flip:
+        #     color = color.transpose(pil.FLIP_LEFT_RIGHT)
 
         return color
 
