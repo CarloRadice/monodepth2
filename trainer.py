@@ -33,13 +33,16 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-oxford-2014-06-26-09-31-18-nocrop'
+wandb_name = str(today) + '-mono-oxford-2014-06-26-09-31-18-crop-640x400-simplesplit-noflip'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
 # frame_id che controllo ad ogni iterazione (ORA PER OXFORD 2014-06-26-09-31-18)
 wandb_frame_id = 1985
-original_height = 960
+# NO CROP
+#original_height = 960
+# CROP
+original_height = 800
 original_width =1280
 
 
