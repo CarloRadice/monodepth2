@@ -20,8 +20,12 @@ from torchvision import transforms, datasets
 
 import networks
 from layers import disp_to_depth
-from utils import download_model_if_doesnt_exist
+from utils import download_model_if_doesnt_exist, readlines
 from evaluate_depth import STEREO_SCALE_FACTOR
+
+test_files_dir = '/home/radice/neuralNetworks/monodepth2/splits'
+kitti_path = '/home/radice/neuralNetworks/results/monodepth2/KITTI/'
+oxford_path = '/home/radice/neuralNetworks/results/monodepth2/OXFORD/'
 
 
 def parse_args():
@@ -54,11 +58,20 @@ def parse_args():
                         help='if set, predicts metric depth instead of disparity. (This only '
                              'makes sense for stereo-trained KITTI models).',
                         action='store_true')
-    # aggiunto da me
+    # aggiunti da me
     parser.add_argument("--dataset",
                         help='dataset to select for metric prediction',
                         choices=['KITTI', 'OXFORD'],
                         required=True)
+    parser.add_argument("--model",
+                        help='name of the model used, needed to correctly order the test images in folders',
+                        required=True)
+    parser.add_argument("--dataset_run",
+                        help='name of the run used, needed to correctly order the test images in folders',
+                        required=True)
+    parser.add_argument("--use_test_set",
+                        help='choice of using the test set .txt file in monodepth2/splits',
+                        action="store_true")
 
     return parser.parse_args()
 
@@ -107,37 +120,57 @@ def test_simple(args):
     depth_decoder.to(device)
     depth_decoder.eval()
 
+    folder = args.dataset_run
+    model = args.model
+
+    if args.dataset == 'KITTI':
+        output_directory = os.path.join(kitti_path, folder, model)
+        if not os.path.isdir(output_directory):
+            os.makedirs(output_directory)
+
+    if args.dataset == 'OXFORD':
+        output_directory = os.path.join(oxford_path, folder, model)
+        if not os.path.isdir(output_directory):
+            os.makedirs(output_directory)
+
     # FINDING INPUT IMAGES
     if os.path.isfile(args.image_path):
         # Only testing on a single image
         paths = [args.image_path]
+        # # KITTI path finder
+        # if args.dataset == 'KITTI':
+        #     print('-> USING KITTI TEST IMAGE')
+        #     splitted = paths[0].split('/')
+        #     folder = [s for s in splitted if "_sync" in s][0]
+        # # OXFORD path finder
+        # if args.dataset == 'OXFORD':
+        #     print('-> USING OXFORD TEST IMAGE')
+        #     splitted = paths[0].split('/')
+        #     folder = [s for s in splitted if ('2014' or '2015') in s][0]
+    elif os.path.isdir(args.image_path):
+        paths = []
         # KITTI path finder
         if args.dataset == 'KITTI':
-            print('-> USING KITTI TEST IMAGE')
-            splitted = paths[0].split('/')
-            folder = [s for s in splitted if "_sync" in s]
-            # output_directory = os.path.dirname(args.image_path)
-            output_directory = '/home/radice/neuralNetworks/results/monodepth2/KITTI/'
-
+            # Searching folder for images
+            if args.use_test_set:
+                side_map = {"2": 2, "3": 3, "l": 2, "r": 3}
+                # open test_files.txt
+                test_file_path = os.path.join(test_files_dir, 'eigen', 'test_files.txt')
+                train_filenames = readlines(test_file_path)
+                for file in train_filenames:
+                    splitted = file.split(' ')
+                    paths.append(os.path.join(splitted[0], side_map[splitted[2]], "{}{}".format(splitted[1], '.jpg')))
+        # OXFORD path finder
         if args.dataset == 'OXFORD':
-            print('-> USING OXFORD TEST IMAGE')
-            splitted = paths[0].split('/')
-            # da cambiare poi quando verrà scaricato il dataset reale
-            folder = [s for s in splitted if ('2014' or '2015') in s]
-            # output_directory = os.path.dirname(args.image_path)
-            output_directory = '/home/radice/neuralNetworks/results/monodepth2/OXFORD/'
-
-        path = os.path.normpath(args.image_path)
-        path = path.split(os.sep)
-
-    elif os.path.isdir(args.image_path):
-        # Searching folder for images
-        paths = glob.glob(os.path.join(args.image_path, '*.{}'.format(args.ext)))
-        # output_directory = args.image_path
-        output_directory = '/home/radice/neuralNetworks/m2Result'
-        path = os.path.normpath(args.image_path)
-        path = path.split(os.sep)
-
+            # Searching folder for images
+            if args.use_test_set:
+                side_map = {"l": "left", "r": "right"}
+                # open test_files.txt
+                test_file_path = os.path.join(test_files_dir, 'oxford', 'test_files.txt')
+                train_filenames = readlines(test_file_path)
+                for file in train_filenames:
+                    splitted = file.split(' ')
+                    paths.append(os.path.join(splitted[0], side_map[splitted[2]], "{}{}".format(splitted[1], '.jpg')))
     else:
         raise Exception("Can not find args.image_path: {}".format(args.image_path))
 
@@ -170,7 +203,8 @@ def test_simple(args):
             output_name = os.path.splitext(os.path.basename(image_path))[0]
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
             if args.pred_metric_depth:
-                name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format(folder[0] + '_' + output_name))
+                #name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format(folder + '_' + output_name))
+                name_dest_npy = os.path.join(output_directory, "{}_depth.npy".format(output_name))
                 if args.dataset == 'KITTI':
                     print('-> KITTI STEREO_SCALE_FACTOR', STEREO_SCALE_FACTOR)
                     metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
@@ -182,7 +216,8 @@ def test_simple(args):
                     print('-> OXFORD STEREO_SCALE_FACTOR', stereo_scale_factor)
                 np.save(name_dest_npy, metric_depth)
             else:
-                name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(folder[0] +'_' + output_name))
+                #name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(folder +'_' + output_name))
+                name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(output_name))
                 np.save(name_dest_npy, scaled_disp.cpu().numpy())
 
             # Saving colormapped depth image
@@ -193,7 +228,8 @@ def test_simple(args):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-            name_dest_im = os.path.join(output_directory, "{}_disp.jpeg".format(folder[0] + '_' + output_name))
+            #name_dest_im = os.path.join(output_directory, "{}_disp.jpeg".format(folder + '_' + output_name))
+            name_dest_im = os.path.join(output_directory, "{}_disp.jpeg".format(output_name))
             im.save(name_dest_im)
 
             print("   Processed {:d} of {:d} images - saved predictions to:".format(
