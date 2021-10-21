@@ -33,7 +33,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-oxford-2014-06-26-09-31-18-crop-640x400-simplesplit-noflip'
+wandb_name = str(today) + '-mono-oxford-2014-06-26-09-31-18-crop-512x320-simplesplit-noflip'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
