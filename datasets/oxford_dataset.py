@@ -4,6 +4,7 @@ import os
 import numpy as np
 import PIL.Image as pil
 from .mono_dataset import MonoDataset
+import sys
 
 
 class OXFORDDataset(MonoDataset):
@@ -52,8 +53,11 @@ class OXFORDDataset(MonoDataset):
         """
         color = self.loader(self.get_image_path(folder, frame_index, side))
 
-        # if do_flip:
-        #     color = color.transpose(pil.FLIP_LEFT_RIGHT)
+        if not self.transform == None:
+            color = self.transform(color)
+
+        if do_flip:
+            color = color.transpose(pil.FLIP_LEFT_RIGHT)
 
         return color
 
@@ -71,5 +75,6 @@ class OXFORDRAWDataset(OXFORDDataset):
         """
         # frame_index è l'intero nome dell'immagine
         f_str = "{}{}".format(frame_index, self.img_ext)
+        # folder contiene già il percorso completo fino alla cartella dell'immagine
         image_path = os.path.join(folder, "{}".format(self.side_map[side]), f_str)
         return image_path

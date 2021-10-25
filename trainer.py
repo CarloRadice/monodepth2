@@ -14,6 +14,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
+import torchvision
 
 import json
 
@@ -33,16 +34,17 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-oxford-2014-06-26-09-31-18-crop-512x320-simplesplit-noflip'
+wandb_name = str(today) + '-mono-oxford-alternativeroute-crop-mixedsplit'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
 # frame_id che controllo ad ogni iterazione (ORA PER OXFORD 2014-06-26-09-31-18)
-wandb_frame_id = 1985
+# /media/RAIDONE/radice/OXFORD/2014-05-19-12-51-39/processed/stereo 4140 r l
+wandb_frame_id = 4140
 # NO CROP
 #original_height = 960
 # CROP
-original_height = 800
+original_height = 600
 original_width =1280
 
 
@@ -163,15 +165,18 @@ class Trainer:
         num_train_samples = len(train_filenames)
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
+        # per effettuare il resize di Oxford
+        transform = torchvision.transforms.Compose([oxford_crop])
+
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext)
+            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, transform=transform)
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
         val_dataset = self.dataset(
             self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext)
+            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext, transform=transform)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
@@ -249,8 +254,8 @@ class Trainer:
             outputs, losses = self.process_batch(inputs)
 
             # ritorna tutte le immagini per questo input
-            color_image_list = inputs.get(('color', 0, 0))
-            #ritorna tutti i frame_id per questo input
+            # color_image_list = inputs.get(('color', 0, 0))
+            # ritorna tutti i frame_id per questo input
             frame_id_list = inputs.get('frame_id')
             frame_id_list = frame_id_list.cpu().numpy()
             if wandb_frame_id in frame_id_list:
@@ -708,3 +713,13 @@ class Trainer:
             self.model_optimizer.load_state_dict(optimizer_dict)
         else:
             print("Cannot find Adam weights so Adam is randomly initialized")
+
+
+def oxford_crop(image):
+    """
+    Permette di eseguire il crop delle immagini di oxford online.
+    Viene rimosso il veicolo con sopra le camere ultimi (160 pixel in altezza)
+    """
+    crop_area = (0, 200, 1280, 800)
+    image = image.crop(crop_area)
+    return image
