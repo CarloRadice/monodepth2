@@ -4,6 +4,7 @@ import os
 import numpy as np
 import PIL.Image as pil
 from .mono_dataset import MonoDataset
+import sys
 
 
 class OXFORDDataset(MonoDataset):
@@ -22,12 +23,21 @@ class OXFORDDataset(MonoDataset):
         # Cosa ho fatto:
         # prima riga: 983.044006 / 1280, 0, 643.646973/ 1280, 0
         # seconda riga: 0, 983.044006 / 960, 493.378998 / 960, 0
+        # self.K = np.array([[0.77, 0, 0.5, 0],
+        #                    [0, 1.02, 0.5, 0],
+        #                    [0, 0, 1, 0],
+        #                    [0, 0, 0, 1]], dtype=np.float32)
+
+        # NO IMAGE CROP
+        # self.full_res_shape = (1280, 960)
+        # IMAGE CROP
+        self.full_res_shape = (1280, 800)
+        # seconda riga: 0, 983.044006 / 800, 493.378998 / 800, 0
         self.K = np.array([[0.77, 0, 0.5, 0],
-                           [0, 1.02, 0.5, 0],
+                           [0, 1.23, 0.62, 0],
                            [0, 0, 1, 0],
                            [0, 0, 0, 1]], dtype=np.float32)
 
-        self.full_res_shape = (1280, 960)
         self.side_map = {"l": "left", "r": "right"}
 
     def check_depth(self):
@@ -42,6 +52,9 @@ class OXFORDDataset(MonoDataset):
         Horizontal flip augmentation.
         """
         color = self.loader(self.get_image_path(folder, frame_index, side))
+
+        if not self.transform == None:
+            color = self.transform(color)
 
         if do_flip:
             color = color.transpose(pil.FLIP_LEFT_RIGHT)
@@ -62,5 +75,6 @@ class OXFORDRAWDataset(OXFORDDataset):
         """
         # frame_index è l'intero nome dell'immagine
         f_str = "{}{}".format(frame_index, self.img_ext)
+        # folder contiene già il percorso completo fino alla cartella dell'immagine
         image_path = os.path.join(folder, "{}".format(self.side_map[side]), f_str)
         return image_path

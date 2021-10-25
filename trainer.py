@@ -14,6 +14,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
+import torchvision
 
 import json
 
@@ -25,10 +26,48 @@ import datasets
 import networks
 from IPython import embed
 
+# wandb
+import wandb
+from datetime import date
+import PIL.Image as pil
+import matplotlib as mpl
+import matplotlib.cm as cm
+
+today = date.today()
+wandb_name = str(today) + '-mono-oxford-alternativeroute-crop-mixedsplit'
+#wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
+wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
+config = wandb.config
+# frame_id che controllo ad ogni iterazione (ORA PER OXFORD 2014-06-26-09-31-18)
+# /media/RAIDONE/radice/OXFORD/2014-05-19-12-51-39/processed/stereo 4140 r l
+wandb_frame_id = 4140
+# NO CROP
+#original_height = 960
+# CROP
+original_height = 600
+original_width =1280
+
 
 class Trainer:
     def __init__(self, options):
+
         self.opt = options
+
+        #### WANDB #####
+        config.width = self.opt.width
+        config.height = self.opt.height
+        config.dataset = self.opt.dataset
+        config.split = self.opt.split
+        config.batch_size = self.opt.batch_size
+        config.learning_rate = self.opt.learning_rate
+        config.epochs = self.opt.num_epochs
+        config.layers = self.opt.num_layers
+        config.disparity_smoothness = self.opt.disparity_smoothness
+        config.scales = self.opt.scales
+        config.min_depth = self.opt.min_depth
+        config.max_depth = self.opt.max_depth
+        ################
+
         self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
 
         # checking height and width are multiples of 32
@@ -126,15 +165,18 @@ class Trainer:
         num_train_samples = len(train_filenames)
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
+        # per effettuare il resize di Oxford
+        transform = torchvision.transforms.Compose([oxford_crop])
+
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext)
+            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, transform=transform)
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
         val_dataset = self.dataset(
             self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext)
+            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext, transform=transform)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
@@ -200,11 +242,26 @@ class Trainer:
         print("Training")
         self.set_train()
 
+        epoch_loss = 0
+        count = 0
+
+        wandb_disp = 0
+
         for batch_idx, inputs in enumerate(self.train_loader):
 
             before_op_time = time.time()
 
             outputs, losses = self.process_batch(inputs)
+
+            # ritorna tutte le immagini per questo input
+            # color_image_list = inputs.get(('color', 0, 0))
+            # ritorna tutti i frame_id per questo input
+            frame_id_list = inputs.get('frame_id')
+            frame_id_list = frame_id_list.cpu().numpy()
+            if wandb_frame_id in frame_id_list:
+                index = np.where(frame_id_list==wandb_frame_id)
+                wandb_disp_list = outputs[("disp", 0)]
+                wandb_disp = wandb_disp_list[index]
 
             self.model_optimizer.zero_grad()
             losses["loss"].backward()
@@ -216,9 +273,6 @@ class Trainer:
             early_phase = batch_idx % self.opt.log_frequency == 0 and self.step < 2000
             late_phase = self.step % 2000 == 0
 
-            # stampa sempre log_time
-            #self.log_time(batch_idx, duration, losses["loss"].cpu().data)
-
             if early_phase or late_phase:
                 self.log_time(batch_idx, duration, losses["loss"].cpu().data)
 
@@ -228,7 +282,31 @@ class Trainer:
                 self.log("train", inputs, outputs, losses)
                 self.val()
 
+            # wandb log
+            #wandb.log({'batch_loss': losses["loss"].cpu().data})
+            epoch_loss+= losses["loss"].cpu().data
+
             self.step += 1
+            count += 1
+
+        epoch_loss = epoch_loss / count
+
+        # wandb log
+        # save 1 depth image for each epoch
+        # Saving colormapped depth image
+        if torch.is_tensor(wandb_disp):
+            wandb_disp_resized = torch.nn.functional.interpolate(wandb_disp, (original_height, original_width),
+                                                                 mode="bilinear", align_corners=False)
+            wandb_disp_resized_np = wandb_disp_resized.detach().squeeze().cpu().numpy()
+            vmax = np.percentile(wandb_disp_resized_np, 95)
+            normalizer = mpl.colors.Normalize(vmin=wandb_disp_resized_np.min(), vmax=vmax)
+            mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
+            colormapped_im = (mapper.to_rgba(wandb_disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
+            im = pil.fromarray(colormapped_im)
+            single_image = wandb.Image(im)
+            wandb.log({"examples": single_image}, step = self.epoch)
+        wandb.log({'epoch_loss': epoch_loss}, step = self.epoch)
+
 
     def process_batch(self, inputs):
         """Pass a minibatch through the network and generate images and losses
@@ -385,6 +463,8 @@ class Trainer:
                     cam_points, inputs[("K", source_scale)], T)
 
                 outputs[("sample", frame_id, scale)] = pix_coords
+
+                #print("pix coords shape", pix_coords.shape)
 
                 outputs[("color", frame_id, scale)] = F.grid_sample(
                     inputs[("color", frame_id, source_scale)],
@@ -633,3 +713,13 @@ class Trainer:
             self.model_optimizer.load_state_dict(optimizer_dict)
         else:
             print("Cannot find Adam weights so Adam is randomly initialized")
+
+
+def oxford_crop(image):
+    """
+    Permette di eseguire il crop delle immagini di oxford online.
+    Viene rimosso il veicolo con sopra le camere ultimi (160 pixel in altezza)
+    """
+    crop_area = (0, 200, 1280, 800)
+    image = image.crop(crop_area)
+    return image
