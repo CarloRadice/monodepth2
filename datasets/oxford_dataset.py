@@ -6,7 +6,6 @@ import PIL.Image as pil
 from .mono_dataset import MonoDataset
 import sys
 
-
 class OXFORDDataset(MonoDataset):
     """
     Super class for different types of OXFORD dataset loaders
@@ -28,12 +27,10 @@ class OXFORDDataset(MonoDataset):
         # https://github.com/BerkeleyAutomation/perception/blob/6b7bfadae206b130dce21b63034d70211ba7a9f8/perception/camera_intrinsics.py#L184
         width = 1280
         height = 960
-
         fx = 983.044006
         fx /= width
         fy = 983.044006
         fy /= height
-
         cx = 643.646973
         cy = 493.378998
         # Parameters
@@ -53,6 +50,8 @@ class OXFORDDataset(MonoDataset):
         crop_cj = self.crop_area[2] - (crop_width / 2)
         crop_cx = cx + float(crop_width-1)/2 - crop_cj
         crop_cy = cy + float(crop_height-1)/2 - crop_ci
+        crop_cx /= width
+        crop_cy /= height
 
         self.K = np.array([[fx, 0, crop_cx, 0],
                            [0, fy, crop_cy, 0],
@@ -60,6 +59,16 @@ class OXFORDDataset(MonoDataset):
                            [0, 0, 0, 1]], dtype=np.float32)
 
         self.side_map = {"l": "left", "r": "right"}
+
+        print('width:', width)
+        print('height:', height)
+        print('fx:', fx)
+        print('fy:', fy)
+        print('crop_width:', crop_width)
+        print('crop_height:', crop_height)
+        print('crop_cx:', crop_cx)
+        print('crop_cy:', crop_cy, '\n')
+
 
     def check_depth(self):
         """
@@ -74,8 +83,9 @@ class OXFORDDataset(MonoDataset):
         """
         color = self.loader(self.get_image_path(folder, frame_index, side))
 
-        if not self.transform == None:
+        if self.transform is not None:
             color = self.transform(color, self.crop_area)
+            #color = self.transform(color)
 
         # If your principal point is far from the center you might need to disable the horizontal
         # flip augmentation.
