@@ -47,7 +47,7 @@ class MonoDataset(data.Dataset):
                  num_scales,
                  is_train=False,
                  img_ext='.jpg',
-                 transform=None):
+                 mytransform=None):
         super(MonoDataset, self).__init__()
 
         self.data_path = data_path
@@ -66,7 +66,7 @@ class MonoDataset(data.Dataset):
         self.to_tensor = transforms.ToTensor()
 
         # SERVE PER FARE IL RESIZE
-        self.transform = transform
+        self.transform = mytransform
 
         # We need to specify augmentations differently in newer versions of torchvision.
         # We first try the newer tuple version; if this fails we fall back to scalars

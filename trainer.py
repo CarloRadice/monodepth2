@@ -34,7 +34,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-oxford-alternativeroute-crop-mixedsplit'
+wandb_name = str(today) + '-mono-oxford-alternativeroute-crop1280x460-mixedsplit-noflip-epochs25'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
@@ -44,7 +44,7 @@ wandb_frame_id = 4140
 # NO CROP
 #original_height = 960
 # CROP
-original_height = 600
+original_height = 460
 original_width =1280
 
 
@@ -166,17 +166,20 @@ class Trainer:
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
         # per effettuare il resize di Oxford
-        transform = torchvision.transforms.Compose([oxford_crop])
+        mytransform = None
+        if self.opt.dataset == 'oxford':
+            #transform = torchvision.transforms.Compose([oxford_crop])
+            mytransform = MyCompose([oxford_crop])
 
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, transform=transform)
+            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, transform=mytransform)
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
         val_dataset = self.dataset(
             self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext, transform=transform)
+            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext, transform=mytransform)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
@@ -715,11 +718,21 @@ class Trainer:
             print("Cannot find Adam weights so Adam is randomly initialized")
 
 
-def oxford_crop(image):
+def oxford_crop(image, crop_area):
     """
     Permette di eseguire il crop delle immagini di oxford online.
     Viene rimosso il veicolo con sopra le camere ultimi (160 pixel in altezza)
     """
-    crop_area = (0, 200, 1280, 800)
+    #crop_area = (0, 300, 1280, 760)
     image = image.crop(crop_area)
     return image
+
+
+class MyCompose(object):
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, image, crop_area):
+        for t in self.transforms:
+            image = t(image, crop_area)
+        return image

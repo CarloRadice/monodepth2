@@ -64,14 +64,18 @@ def parse_args():
                         choices=['KITTI', 'OXFORD'],
                         required=True)
     parser.add_argument("--model",
-                        help='name of the model used, needed to correctly order the test images in folders',
+                        help='name of the model used, needed to correctly order the test images in folders'
+                             'esempio: 2021-10-25-mono-oxford-alternativeroute-crop-mixedsplit',
                         required=True)
     parser.add_argument("--dataset_run",
-                        help='name of the run used, needed to correctly order the test images in folders',
+                        help='name of the run used, needed to correctly order the test images in folders.'
+                             'esempio: 2014-06-26-09-31-18',
                         required=True)
     parser.add_argument("--use_test_set",
                         help='choice of using the test set .txt file in monodepth2/splits',
                         action="store_true")
+    parser.add_argument("--crop_area",
+                        help='area of the cropped image in Oxford', type=int, required=False)
 
     return parser.parse_args()
 
@@ -120,16 +124,16 @@ def test_simple(args):
     depth_decoder.to(device)
     depth_decoder.eval()
 
-    folder = args.dataset_run
-    model = args.model
+    folder = args.model
+    run = args.dataset_run
 
     if args.dataset == 'KITTI':
-        output_directory = os.path.join(kitti_path, folder, model)
+        output_directory = os.path.join(kitti_path, folder, run)
         if not os.path.isdir(output_directory):
             os.makedirs(output_directory)
 
     if args.dataset == 'OXFORD':
-        output_directory = os.path.join(oxford_path, folder, model)
+        output_directory = os.path.join(oxford_path, folder, run)
         if not os.path.isdir(output_directory):
             os.makedirs(output_directory)
 
@@ -186,6 +190,12 @@ def test_simple(args):
 
             # Load image and preprocess
             input_image = pil.open(image_path).convert('RGB')
+
+            # effettuo il crop dell'immagine se il dataset è OXFORD
+            if args.dataset == 'OXFORD':
+                crop_area = tuple(args.crop_area)
+                input_image = input_image.crop(crop_area)
+
             original_width, original_height = input_image.size
             input_image = input_image.resize((feed_width, feed_height), pil.LANCZOS)
             input_image = transforms.ToTensor()(input_image).unsqueeze(0)
