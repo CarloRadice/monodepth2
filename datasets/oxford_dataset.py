@@ -43,7 +43,7 @@ class OXFORDDataset(MonoDataset):
         #     row of crop window center
         # crop_cj : int
         #     col of crop window center
-        self.crop_area = (0, 300, 1280, 760)
+        self.crop_area = (0, 360, 1280, 730)
         crop_width = self.crop_area[2] - self.crop_area[0]
         crop_height = self.crop_area[3] - self.crop_area[1]
         crop_ci = self.crop_area[3] - (crop_height / 2)
@@ -88,7 +88,7 @@ class OXFORDDataset(MonoDataset):
 
         # If your principal point is far from the center you might need to disable the horizontal
         # flip augmentation.
-        if (do_flip) and (0.48 <= self.crop_cx <= 0.52) and (0.48 <= self.crop_cy <= 0.52):
+        if ((do_flip) and (0.48 <= self.crop_cx <= 0.52) and (0.48 <= self.crop_cy <= 0.52)):
             color = color.transpose(pil.FLIP_LEFT_RIGHT)
 
         return color

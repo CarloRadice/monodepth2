@@ -34,7 +34,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-oxford-mainroute-crop1280x460-refined-noflip'
+wandb_name = str(today) + '-mono-pretrained-oxford-mainroute-crop1280x370-refined'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
