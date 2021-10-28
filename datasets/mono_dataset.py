@@ -66,7 +66,7 @@ class MonoDataset(data.Dataset):
         self.to_tensor = transforms.ToTensor()
 
         # SERVE PER FARE IL RESIZE
-        self.transform = mytransform
+        self.mytransform = mytransform
 
         # We need to specify augmentations differently in newer versions of torchvision.
         # We first try the newer tuple version; if this fails we fall back to scalars

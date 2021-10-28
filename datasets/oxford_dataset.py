@@ -48,13 +48,13 @@ class OXFORDDataset(MonoDataset):
         crop_height = self.crop_area[3] - self.crop_area[1]
         crop_ci = self.crop_area[3] - (crop_height / 2)
         crop_cj = self.crop_area[2] - (crop_width / 2)
-        crop_cx = cx + float(crop_width-1)/2 - crop_cj
-        crop_cy = cy + float(crop_height-1)/2 - crop_ci
-        crop_cx /= width
-        crop_cy /= height
+        self.crop_cx = cx + float(crop_width-1)/2 - crop_cj
+        self.crop_cy = cy + float(crop_height-1)/2 - crop_ci
+        self.crop_cx /= width
+        self.crop_cy /= height
 
-        self.K = np.array([[fx, 0, crop_cx, 0],
-                           [0, fy, crop_cy, 0],
+        self.K = np.array([[fx, 0, self.crop_cx, 0],
+                           [0, fy, self.crop_cy, 0],
                            [0, 0, 1, 0],
                            [0, 0, 0, 1]], dtype=np.float32)
 
@@ -83,14 +83,13 @@ class OXFORDDataset(MonoDataset):
         """
         color = self.loader(self.get_image_path(folder, frame_index, side))
 
-        if self.transform is not None:
-            color = self.transform(color, self.crop_area)
-            #color = self.transform(color)
+        if self.mytransform is not None:
+            color = self.mytransform(color, self.crop_area)
 
         # If your principal point is far from the center you might need to disable the horizontal
         # flip augmentation.
-        # if do_flip:
-        #     color = color.transpose(pil.FLIP_LEFT_RIGHT)
+        if (do_flip) and (0.48 <= self.crop_cx <= 0.52) and (0.48 <= self.crop_cy <= 0.52):
+            color = color.transpose(pil.FLIP_LEFT_RIGHT)
 
         return color
 

@@ -34,18 +34,19 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-mono-oxford-alternativeroute-crop1280x460-mixedsplit-noflip-epochs25'
+wandb_name = str(today) + '-mono-oxford-mainroute-crop1280x460-refined-noflip'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
 # frame_id che controllo ad ogni iterazione (ORA PER OXFORD 2014-06-26-09-31-18)
 # /media/RAIDONE/radice/OXFORD/2014-05-19-12-51-39/processed/stereo 4140 r l
-wandb_frame_id = 4140
+#wandb_frame_id = 4140
+wandb_frame_id = 27891
 # NO CROP
 #original_height = 960
 # CROP
 original_height = 460
-original_width =1280
+original_width = 1280
 
 
 class Trainer:
@@ -173,13 +174,13 @@ class Trainer:
 
         train_dataset = self.dataset(
             self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, transform=mytransform)
+            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, mytransform=mytransform)
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
         val_dataset = self.dataset(
             self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext, transform=mytransform)
+            self.opt.frame_ids, 4, is_train=False, img_ext=img_ext, mytransform=mytransform)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
