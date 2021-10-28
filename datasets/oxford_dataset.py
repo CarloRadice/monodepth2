@@ -66,8 +66,8 @@ class OXFORDDataset(MonoDataset):
         print('fy:', fy)
         print('crop_width:', crop_width)
         print('crop_height:', crop_height)
-        print('crop_cx:', crop_cx)
-        print('crop_cy:', crop_cy, '\n')
+        print('crop_cx:', self.crop_cx)
+        print('crop_cy:', self.crop_cy, '\n')
 
 
     def check_depth(self):
