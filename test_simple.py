@@ -75,8 +75,10 @@ def parse_args():
                         help='choice of using the test set .txt file in monodepth2/splits',
                         action="store_true")
     parser.add_argument("--crop_area",
-                        help='area of the cropped image in Oxford', type=int, required=False)
-
+                        help='area of the cropped image in Oxford', required=False, default=(0, 360, 1280, 730))
+    parser.add_argument("--resnet",
+                        type=int,
+                        default=18)
     return parser.parse_args()
 
 
@@ -103,7 +105,13 @@ def test_simple(args):
 
     # LOADING PRETRAINED MODEL
     print("   Loading pretrained encoder")
-    encoder = networks.ResnetEncoder(18, False)
+    if args.resnet == 18:
+        encoder = networks.ResnetEncoder(18, False)
+    elif args.resnet == 50:
+        encoder = networks.ResnetEncoder(50, False)
+    else:
+        raise Exception('Can not find resnet {}'.format(args.resnet))
+
     loaded_dict_enc = torch.load(encoder_path, map_location=device)
 
     # extract the height and width of image that this model was trained with
