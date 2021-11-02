@@ -34,18 +34,19 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 today = date.today()
-wandb_name = str(today) + '-monostereo-pretrained-oxford-mainroute-crop1280x370-refined'
+wandb_name = str(today) + '-mono-oxford-alternativeroute-crop1280x370-1024x320-refined'
 #wandb.init(project='monodepth2', entity='carloradice', name=wandb_name, mode='disabled')
 wandb.init(project='monodepth2', entity='carloradice', name=wandb_name)
 config = wandb.config
 # frame_id che controllo ad ogni iterazione (ORA PER OXFORD 2014-06-26-09-31-18)
 # /media/RAIDONE/radice/OXFORD/2014-05-19-12-51-39/processed/stereo 4140 r l
-#wandb_frame_id = 4140
-wandb_frame_id = 27891
+wandb_frame_id = 4140
+# per main route
+#wandb_frame_id = 27891
 # NO CROP
 #original_height = 960
 # CROP
-original_height = 460
+original_height = 370
 original_width = 1280
 
 
@@ -246,7 +247,7 @@ class Trainer:
         print("Training")
         self.set_train()
 
-        epoch_loss = 0
+        train_epoch_loss = 0
         count = 0
 
         wandb_disp = 0
@@ -288,12 +289,12 @@ class Trainer:
 
             # wandb log
             #wandb.log({'batch_loss': losses["loss"].cpu().data})
-            epoch_loss+= losses["loss"].cpu().data
+            train_epoch_loss+= losses["loss"].cpu().data
 
             self.step += 1
             count += 1
 
-        epoch_loss = epoch_loss / count
+        train_epoch_loss = train_epoch_loss / count
 
         # wandb log
         # save 1 depth image for each epoch
@@ -308,8 +309,8 @@ class Trainer:
             colormapped_im = (mapper.to_rgba(wandb_disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
             single_image = wandb.Image(im)
-            wandb.log({"examples": single_image}, step = self.epoch)
-        wandb.log({'epoch_loss': epoch_loss}, step = self.epoch)
+            wandb.log({"train_depth": single_image}, step = self.epoch)
+        wandb.log({'train_epoch_loss': train_epoch_loss}, step = self.epoch)
 
 
     def process_batch(self, inputs):
