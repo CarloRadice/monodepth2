@@ -14,7 +14,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
-import torchvision
 
 import json
 
@@ -24,7 +23,6 @@ from layers import *
 
 import datasets
 import networks
-from IPython import embed
 
 # wandb
 import wandb
