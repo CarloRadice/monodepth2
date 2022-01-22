@@ -23,28 +23,16 @@ from layers import disp_to_depth
 from utils import download_model_if_doesnt_exist, readlines
 from evaluate_depth import STEREO_SCALE_FACTOR
 
-TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/depth-and-motion-learning/splits/kitti/eigen_test_files.txt'
+TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/eigen_test_files.txt'
 OUTPUT_DIR = '/media/RAIDONE/radice/neural-networks-data/predictions/'
+MODELS_DIR = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Simple testing funtion for Monodepthv2 models.')
 
     parser.add_argument('--model_name', type=str,
-                        help='name of a pretrained model to use',
-                        choices=[
-                            "mono_640x192",
-                            "stereo_640x192",
-                            "mono+stereo_640x192",
-                            "mono_no_pt_640x192",
-                            "stereo_no_pt_640x192",
-                            "mono+stereo_no_pt_640x192",
-                            "mono_1024x320",
-                            "stereo_1024x320",
-                            "mono+stereo_1024x320",
-                            "oxford_stereo_640x192",
-                            "oxford_mono_640x192",
-                            "oxford"])
+                        help='name of a pretrained model to use')
     parser.add_argument('--ext', type=str,
                         help='image extension to search for in folder', default="jpg")
     parser.add_argument("--no_cuda",
@@ -75,8 +63,8 @@ def test_simple(args):
         print("Warning: The --pred_metric_depth flag only makes sense for stereo-trained KITTI "
               "models. For mono-trained models, output depths will not in metric space.")
 
-    download_model_if_doesnt_exist(args.model_name)
-    model_path = os.path.join("models", args.model_name)
+    # download_model_if_doesnt_exist(args.model_name)
+    model_path = os.path.join(MODELS_DIR, args.model_name)
     print("-> Loading model from", model_path)
     encoder_path = os.path.join(model_path, "encoder.pth")
     depth_decoder_path = os.path.join(model_path, "depth.pth")
