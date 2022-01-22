@@ -169,10 +169,26 @@ class Trainer:
 
         self.save_opts()
 
-        # WandB
-        #id = wandb.util.generate_id()
-        #wandb.init(project="monodepth2", entity="carloradice", config=self, name="kitti-mono-640x192", id=id)
-        #wandb.watch(self.models["depth"], log="all", loq_freq=100)
+        ''' WandB '''
+        id = wandb.util.generate_id()
+        dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2'
+        # Config
+        config = wandb.config
+        config.width = self.opt.width
+        config.height = self.opt.height
+        config.dataset = self.opt.dataset
+        config.split = self.opt.split
+        config.batch_size = self.opt.batch_size
+        config.learning_rate = self.opt.learning_rate
+        config.epochs = self.opt.num_epochs
+        config.layers = self.opt.num_layers
+        config.disparity_smoothness = self.opt.disparity_smoothness
+        config.scales = self.opt.scales
+        config.min_depth = self.opt.min_depth
+        config.max_depth = self.opt.max_depth
+        # Init
+        wandb.init(project="monodepth2", entity="carloradice", config=config, name="kitti-stereo-640x192", id=id, dir=dir)
+
 
 
     def set_train(self):
