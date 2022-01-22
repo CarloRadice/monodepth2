@@ -11,9 +11,19 @@ from options import MonodepthOptions
 
 options = MonodepthOptions()
 opts = options.parse()
+
+# Hard coded options
 opts.data_path = '/media/RAIDONE/radice/datasets/kitti/data'
 opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
+opts.png = True
+
 
 if __name__ == "__main__":
+
     trainer = Trainer(opts)
     trainer.train()
+
+    print("-> Done")
+
+    exit()
+
