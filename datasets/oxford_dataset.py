@@ -4,7 +4,9 @@ import os
 import numpy as np
 import PIL.Image as pil
 from .mono_dataset import MonoDataset
-import sys
+
+#CROP_AREA = (0, 360, 1280, 730)
+CROP_AREA = [0, 200, 1280, 810]
 
 class OXFORDDataset(MonoDataset):
     """
@@ -22,9 +24,9 @@ class OXFORDDataset(MonoDataset):
         # Monodepth2 assumes a principal point to be exactly centered
         # stereo wide
         # intrinsics:  983.044006,  983.044006, 643.646973, 493.378998
-        # se croppo fx e fy rimangono gli stessi
+        # se effettuo del crop, fx e fy rimangono gli stessi
         # vengono modificati cx e cy secondo questo
-        # https://github.com/BerkeleyAutomation/perception/blob/6b7bfadae206b130dce21b63034d70211ba7a9f8/perception/camera_intrinsics.py#L184
+            # https://github.com/BerkeleyAutomation/perception/blob/6b7bfadae206b130dce21b63034d70211ba7a9f8/perception/camera_intrinsics.py#L184
         width = 1280
         height = 960
         fx = 983.044006
@@ -43,7 +45,7 @@ class OXFORDDataset(MonoDataset):
         #     row of crop window center
         # crop_cj : int
         #     col of crop window center
-        self.crop_area = (0, 360, 1280, 730)
+        self.crop_area = CROP_AREA
         crop_width = self.crop_area[2] - self.crop_area[0]
         crop_height = self.crop_area[3] - self.crop_area[1]
         crop_ci = self.crop_area[3] - (crop_height / 2)
@@ -102,11 +104,8 @@ class OXFORDRAWDataset(OXFORDDataset):
         super(OXFORDRAWDataset, self).__init__(*args, **kwargs)
 
     def get_image_path(self, folder, frame_index, side):
-        """
-        TO DO
-        """
         # frame_index è l'intero nome dell'immagine
-        f_str = "{}{}".format(frame_index, self.img_ext)
+        f_str = "{:010d}{}".format(frame_index, self.img_ext)
         # folder contiene già il percorso completo fino alla cartella dell'immagine
         image_path = os.path.join(folder, "{}".format(self.side_map[side]), f_str)
         return image_path
