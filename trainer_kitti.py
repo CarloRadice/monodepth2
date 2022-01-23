@@ -187,8 +187,13 @@ class Trainer:
         config.min_depth = self.opt.min_depth
         config.max_depth = self.opt.max_depth
         # Init
-        wandb.init(project="monodepth2", entity="carloradice", config=config, name="kitti-stereo-640x192", id=id, dir=dir)
-
+        if self.opt.use_stereo:
+            wandb_name = "kitti-stereo-{}x{}".format(self.opt.width, self.opt.height)
+        else:
+            wandb_name = "kitti-mono-{}x{}".format(self.opt.width, self.opt.height)
+        wandb.init(project="monodepth2", entity="carloradice", config=config, name=wandb_name,
+                   id=id, dir=dir)
+        wandb.watch(self.models['depth'])
 
 
     def set_train(self):
@@ -594,6 +599,7 @@ class Trainer:
                     writer.add_image(
                         "automask_{}/{}".format(s, j),
                         outputs["identity_selection/{}".format(s)][j][None, ...], self.step)
+
 
     def save_opts(self):
         """Save options to disk so we know what we ran this experiment with
