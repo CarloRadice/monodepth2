@@ -14,7 +14,7 @@ opts = options.parse()
 
 # Hard coded options
 opts.data_path = '/media/RAIDONE/radice/datasets/kitti/data'
-opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
+opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/log'
 opts.png = True
 
 
