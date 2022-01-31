@@ -5,8 +5,9 @@ import numpy as np
 import PIL.Image as pil
 from .mono_dataset import MonoDataset
 
-#CROP_AREA = (0, 360, 1280, 730)
+# 1280x610
 CROP_AREA = [0, 200, 1280, 810]
+
 
 class OXFORDDataset(MonoDataset):
     """
