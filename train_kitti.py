@@ -12,9 +12,10 @@ from options import MonodepthOptions
 options = MonodepthOptions()
 opts = options.parse()
 
+# Cartella degli splits /home/radice/neuralNetworks/monodepth2/splits/eigen
 # Hard coded options
 opts.data_path = '/media/RAIDONE/radice/datasets/kitti/data'
-opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/log'
+opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
 opts.png = True
 
 

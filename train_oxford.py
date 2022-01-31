@@ -13,15 +13,17 @@ import sys
 
 options = MonodepthOptions()
 opts = options.parse()
+# Cartella degli splits /home/radice/neuralNetworks/monodepth2/splits/oxford
 # Hard coded options
 opts.data_path = '/media/RAIDONE/radice/datasets/oxford'
-opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/log'
+opts.log_dir = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
 opts.png = True
 opts.split = "oxford"
 opts.dataset = "oxford"
 opts.height = 416
 opts.width = 640
 opts.batch_size = 6
+
 
 if __name__ == "__main__":
     trainer = Trainer(opts)

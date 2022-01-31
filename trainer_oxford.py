@@ -198,7 +198,6 @@ class Trainer:
         else:
             wandb_name = "{}-oxford-mono-{}x{}".format(today, self.opt.width, self.opt.height)
         wandb.init(project="monodepth2", entity="carloradice", config=config, name=wandb_name, id=id, dir=dir)
-        wandb.watch(self.models['depth'])
 
 
     def set_train(self):
