@@ -188,9 +188,9 @@ class Trainer:
         config.max_depth = self.opt.max_depth
         # Init
         if self.opt.use_stereo:
-            wandb_name = "kitti-stereo-{}x{}".format(self.opt.width, self.opt.height)
+            wandb_name = "kitti-stereo-{}x{}-{}".format(self.opt.width, self.opt.height, id)
         else:
-            wandb_name = "kitti-mono-{}x{}".format(self.opt.width, self.opt.height)
+            wandb_name = "kitti-mono-{}x{}-{}".format(self.opt.width, self.opt.height, id)
         wandb.init(project="monodepth2", entity="carloradice", config=config, name=wandb_name,
                    id=id, dir=dir)
 
