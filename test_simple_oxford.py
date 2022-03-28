@@ -21,8 +21,9 @@ from torchvision import transforms, datasets
 import networks
 from layers import disp_to_depth
 
-CROP_AREA = [0, 200, 1280, 810]
-TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/oxford_radar_large_test_files.txt'
+# center crop 50% vertically
+CROP_AREA = [0, 240, 1280, 720]
+TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/oxford_radar_test_files.txt'
 OUTPUT_DIR = '/media/RAIDONE/radice/neural-networks-data/predictions/'
 MODELS_DIR = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
 
@@ -145,7 +146,7 @@ def test_simple(args):
             output_name = os.path.splitext(os.path.basename(example))[0]
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
 
-            name_dest_npy = os.path.join(output_folder, date, 'stereo', folder, "{}_disp.npy".format(output_name))
+            name_dest_npy = os.path.join(output_folder, "{}_disp.npy".format(output_name))
             np.save(name_dest_npy, scaled_disp.cpu().numpy())
 
             # Saving colormapped depth image
@@ -156,7 +157,7 @@ def test_simple(args):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-            name_dest_im = os.path.join(output_folder, date, 'stereo', folder, "{}_disp.jpeg".format(output_name))
+            name_dest_im = os.path.join(output_folder, "{}_disp.jpeg".format(output_name))
             im.save(name_dest_im)
 
             print("   Processed {:d} of {:d} images - saved predictions to:".format(

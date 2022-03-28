@@ -21,8 +21,8 @@ opts.png = True
 opts.split = "oxford"
 opts.dataset = "oxford"
 opts.height = 416
-opts.width = 640
-opts.batch_size = 6
+opts.width = 128
+opts.batch_size = 32
 
 
 if __name__ == "__main__":

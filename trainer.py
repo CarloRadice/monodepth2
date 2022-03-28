@@ -723,7 +723,6 @@ def oxford_crop(image, crop_area):
     Permette di eseguire il crop delle immagini di oxford online.
     Viene rimosso il veicolo con sopra le camere ultimi (160 pixel in altezza)
     """
-    #crop_area = (0, 300, 1280, 760)
     image = image.crop(crop_area)
     return image
 

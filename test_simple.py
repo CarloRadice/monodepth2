@@ -75,7 +75,7 @@ def parse_args():
                         help='choice of using the test set .txt file in monodepth2/splits',
                         action="store_true")
     parser.add_argument("--crop_area",
-                        help='area of the cropped image in Oxford', required=False, default=(0, 360, 1280, 730))
+                        help='area of the cropped image in Oxford', required=False, default=(0, 240, 1280, 720))
     parser.add_argument("--resnet",
                         type=int,
                         default=18)

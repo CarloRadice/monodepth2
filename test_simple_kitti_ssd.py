@@ -23,9 +23,10 @@ from layers import disp_to_depth
 from utils import download_model_if_doesnt_exist, readlines
 from evaluate_depth import STEREO_SCALE_FACTOR
 
-TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/kitti_test_files.txt'
-OUTPUT_DIR = '/media/RAIDONE/radice/neural-networks-data/predictions/'
+TEST_FILE = '/home/radice/datasets/kitti-360/kitti_360_test_files.txt'
+OUTPUT_DIR = '/home/radice/datasets/kitti-360/predictions'
 MODELS_DIR = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -116,20 +117,9 @@ def test_simple(args):
     idx = 0
     with torch.no_grad():
         for line in lines:
-
-            line = line.rstrip()
-
-            date = line.split('/')[7]
-            seqname = line.split('/')[8]
-            subfolder = line.split('/')[9]
-
-            basename = os.path.basename(line).split('.')[0]
-
-            if not os.path.isdir(os.path.join(output_folder, date, seqname, subfolder)):
-                os.makedirs(os.path.join(output_folder, date, seqname, subfolder))
-
+            example = line.rstrip()
             # Load image and preprocess
-            input_image = pil.open(line).convert('RGB')
+            input_image = pil.open(example).convert('RGB')
 
             original_width, original_height = input_image.size
             input_image = input_image.resize((feed_width, feed_height), pil.LANCZOS)
@@ -145,13 +135,14 @@ def test_simple(args):
                 disp, (original_height, original_width), mode="bilinear", align_corners=False)
 
             # Saving numpy file
+            output_name = os.path.splitext(os.path.basename(example))[0]
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
             if args.pred_metric_depth:
-                name_dest_npy = os.path.join(output_folder, date, seqname, subfolder, "{}_depth.npy".format(basename))
+                name_dest_npy = os.path.join(output_folder, "{}_depth.npy".format(output_name))
                 metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
                 np.save(name_dest_npy, metric_depth)
             else:
-                name_dest_npy = os.path.join(output_folder, date, seqname, subfolder, "{}_disp.npy".format(basename))
+                name_dest_npy = os.path.join(output_folder, "{}_disp.npy".format(output_name))
                 np.save(name_dest_npy, scaled_disp.cpu().numpy())
 
             # Saving colormapped depth image
@@ -162,7 +153,7 @@ def test_simple(args):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-            name_dest_im = os.path.join(output_folder, date, seqname, subfolder, "{}_disp.jpeg".format(basename))
+            name_dest_im = os.path.join(output_folder, "{}_disp.jpeg".format(output_name))
             im.save(name_dest_im)
 
             print("   Processed {:d} of {:d} images - saved predictions to:".format(

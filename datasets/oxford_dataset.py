@@ -5,9 +5,14 @@ import numpy as np
 import PIL.Image as pil
 from .mono_dataset import MonoDataset
 
-# 1280x610
-CROP_AREA = [0, 200, 1280, 810]
-
+WIDTH = 1280
+HEIGHT = 960
+FX = 983.044006
+FY = 983.044006
+CX = 643.646973
+CY = 493.378998
+# center crop 50% vertically
+CROP_AREA = [0, 240, 1280, 720]
 
 class OXFORDDataset(MonoDataset):
     """
@@ -28,14 +33,10 @@ class OXFORDDataset(MonoDataset):
         # se effettuo del crop, fx e fy rimangono gli stessi
         # vengono modificati cx e cy secondo questo
             # https://github.com/BerkeleyAutomation/perception/blob/6b7bfadae206b130dce21b63034d70211ba7a9f8/perception/camera_intrinsics.py#L184
-        width = 1280
-        height = 960
-        fx = 983.044006
-        fx /= width
-        fy = 983.044006
-        fy /= height
-        cx = 643.646973
-        cy = 493.378998
+
+
+        fx = FX / WIDTH
+        fy = FY / HEIGHT
         # Parameters
         # ----------
         # crop_height : int
@@ -51,10 +52,14 @@ class OXFORDDataset(MonoDataset):
         crop_height = self.crop_area[3] - self.crop_area[1]
         crop_ci = self.crop_area[3] - (crop_height / 2)
         crop_cj = self.crop_area[2] - (crop_width / 2)
-        self.crop_cx = cx + float(crop_width-1)/2 - crop_cj
-        self.crop_cy = cy + float(crop_height-1)/2 - crop_ci
-        self.crop_cx /= width
-        self.crop_cy /= height
+        self.crop_cx = CX + float(crop_width-1)/2 - crop_cj
+        self.crop_cy = CY + float(crop_height-1)/2 - crop_ci
+        self.crop_cx /= WIDTH
+        self.crop_cy /= WIDTH
+
+        # self.crop_cx = 209.18526622500002
+        # self.crop_cy = 65.78386640000001
+
 
         self.K = np.array([[fx, 0, self.crop_cx, 0],
                            [0, fy, self.crop_cy, 0],
@@ -63,8 +68,8 @@ class OXFORDDataset(MonoDataset):
 
         self.side_map = {"l": "left", "r": "right"}
 
-        print('width:', width)
-        print('height:', height)
+        print('width:', WIDTH)
+        print('height:', HEIGHT)
         print('fx:', fx)
         print('fy:', fy)
         print('crop_width:', crop_width)

@@ -23,7 +23,7 @@ from layers import disp_to_depth
 from utils import download_model_if_doesnt_exist, readlines
 from evaluate_depth import STEREO_SCALE_FACTOR
 
-TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/kitti_test_files.txt'
+TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/kitti360_test_files.txt'
 OUTPUT_DIR = '/media/RAIDONE/radice/neural-networks-data/predictions/'
 MODELS_DIR = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
 
@@ -105,7 +105,7 @@ def test_simple(args):
 
     model = args.model_name
 
-    output_folder = os.path.join(OUTPUT_DIR, '{}{}'.format('md2-', model))
+    output_folder = os.path.join(OUTPUT_DIR, '{}{}'.format('md2-kitti360', model))
     if not os.path.isdir(output_folder):
         os.makedirs(output_folder)
 
@@ -118,15 +118,7 @@ def test_simple(args):
         for line in lines:
 
             line = line.rstrip()
-
-            date = line.split('/')[7]
-            seqname = line.split('/')[8]
-            subfolder = line.split('/')[9]
-
             basename = os.path.basename(line).split('.')[0]
-
-            if not os.path.isdir(os.path.join(output_folder, date, seqname, subfolder)):
-                os.makedirs(os.path.join(output_folder, date, seqname, subfolder))
 
             # Load image and preprocess
             input_image = pil.open(line).convert('RGB')
@@ -147,11 +139,11 @@ def test_simple(args):
             # Saving numpy file
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
             if args.pred_metric_depth:
-                name_dest_npy = os.path.join(output_folder, date, seqname, subfolder, "{}_depth.npy".format(basename))
+                name_dest_npy = os.path.join(output_folder, "{}_depth.npy".format(basename))
                 metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
                 np.save(name_dest_npy, metric_depth)
             else:
-                name_dest_npy = os.path.join(output_folder, date, seqname, subfolder, "{}_disp.npy".format(basename))
+                name_dest_npy = os.path.join(output_folder, "{}_disp.npy".format(basename))
                 np.save(name_dest_npy, scaled_disp.cpu().numpy())
 
             # Saving colormapped depth image
@@ -162,7 +154,7 @@ def test_simple(args):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-            name_dest_im = os.path.join(output_folder, date, seqname, subfolder, "{}_disp.jpeg".format(basename))
+            name_dest_im = os.path.join(output_folder, "{}_disp.jpeg".format(basename))
             im.save(name_dest_im)
 
             print("   Processed {:d} of {:d} images - saved predictions to:".format(

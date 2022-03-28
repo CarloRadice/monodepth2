@@ -20,12 +20,15 @@ from torchvision import transforms, datasets
 
 import networks
 from layers import disp_to_depth
-from utils import download_model_if_doesnt_exist, readlines
-from evaluate_depth import STEREO_SCALE_FACTOR
 
-TEST_FILE = '/media/RAIDONE/radice/neural-networks-data/splits/kitti_test_files.txt'
-OUTPUT_DIR = '/media/RAIDONE/radice/neural-networks-data/predictions/'
+# center crop 50% vertically
+CROP_AREA = [0, 240, 1280, 720]
 MODELS_DIR = '/media/RAIDONE/radice/neural-networks-data/monodepth2/models'
+
+# SOLO PER PROVA
+TEST_FILE = '/home/radice/datasets/oxford-radar/test_files.txt'
+OUTPUT_DIR = '/home/radice/datasets/oxford-radar/predictions'
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -34,13 +37,9 @@ def parse_args():
     parser.add_argument('--model_name', type=str,
                         help='name of a pretrained model to use')
     parser.add_argument('--ext', type=str,
-                        help='image extension to search for in folder', default="jpg")
+                        help='image extension to search for in folder', default="png")
     parser.add_argument("--no_cuda",
                         help='if set, disables CUDA',
-                        action='store_true')
-    parser.add_argument("--pred_metric_depth",
-                        help='if set, predicts metric depth instead of disparity. (This only '
-                             'makes sense for stereo-trained KITTI models).',
                         action='store_true')
     parser.add_argument("--resnet",
                         type=int,
@@ -51,6 +50,15 @@ def parse_args():
 def test_simple(args):
     """Function to predict for a single image or folder of images
     """
+
+    # F = []
+    # for f in sorted(glob.glob('/media/RAIDONE/radice/datasets/oxford-radar/2019-01-10-14-36-48-radar-oxford-10k-partial/stereo/left/*.png')):
+    #     F.append(f + '\n')
+    # file = open(TEST_FILE, 'w')
+    # file.writelines(F)
+    # file.close()
+    # exit()
+
     assert args.model_name is not None, \
         "You must specify the --model_name parameter; see README.md for an example"
 
@@ -59,11 +67,6 @@ def test_simple(args):
     else:
         device = torch.device("cpu")
 
-    if args.pred_metric_depth and "stereo" not in args.model_name:
-        print("Warning: The --pred_metric_depth flag only makes sense for stereo-trained KITTI "
-              "models. For mono-trained models, output depths will not in metric space.")
-
-    # download_model_if_doesnt_exist(args.model_name)
     model_path = os.path.join(MODELS_DIR, args.model_name)
     print("-> Loading model from", model_path)
     encoder_path = os.path.join(model_path, "encoder.pth")
@@ -109,27 +112,19 @@ def test_simple(args):
     if not os.path.isdir(output_folder):
         os.makedirs(output_folder)
 
-    print('-> Save in folder {}{}'.format('monodepth2-', model))
+    print('-> Save in folder {}{}'.format('md2-', model))
     print("-> Predicting on {:d} test images".format(len(lines)))
 
     # PREDICTING ON EACH IMAGE IN TURN
     idx = 0
     with torch.no_grad():
-        for line in lines:
-
-            line = line.rstrip()
-
-            date = line.split('/')[7]
-            seqname = line.split('/')[8]
-            subfolder = line.split('/')[9]
-
-            basename = os.path.basename(line).split('.')[0]
-
-            if not os.path.isdir(os.path.join(output_folder, date, seqname, subfolder)):
-                os.makedirs(os.path.join(output_folder, date, seqname, subfolder))
+        for example in lines:
 
             # Load image and preprocess
-            input_image = pil.open(line).convert('RGB')
+            input_image = pil.open(example.rstrip()).convert('RGB')
+
+            # Crop image
+            input_image = input_image.crop(CROP_AREA)
 
             original_width, original_height = input_image.size
             input_image = input_image.resize((feed_width, feed_height), pil.LANCZOS)
@@ -145,14 +140,11 @@ def test_simple(args):
                 disp, (original_height, original_width), mode="bilinear", align_corners=False)
 
             # Saving numpy file
+            output_name = os.path.splitext(os.path.basename(example))[0]
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
-            if args.pred_metric_depth:
-                name_dest_npy = os.path.join(output_folder, date, seqname, subfolder, "{}_depth.npy".format(basename))
-                metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
-                np.save(name_dest_npy, metric_depth)
-            else:
-                name_dest_npy = os.path.join(output_folder, date, seqname, subfolder, "{}_disp.npy".format(basename))
-                np.save(name_dest_npy, scaled_disp.cpu().numpy())
+
+            name_dest_npy = os.path.join(output_folder, "{}_disp.npy".format(output_name))
+            np.save(name_dest_npy, scaled_disp.cpu().numpy())
 
             # Saving colormapped depth image
             disp_resized_np = disp_resized.squeeze().cpu().numpy()
@@ -162,7 +154,7 @@ def test_simple(args):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-            name_dest_im = os.path.join(output_folder, date, seqname, subfolder, "{}_disp.jpeg".format(basename))
+            name_dest_im = os.path.join(output_folder, "{}_disp.jpeg".format(output_name))
             im.save(name_dest_im)
 
             print("   Processed {:d} of {:d} images - saved predictions to:".format(
